@@ -7,6 +7,9 @@
 //
 
 #import "RCTViewManager.h"
+#import <BaiduMapAPI_Map/BMKMapComponent.h>
+#import <BaiduMapAPI_Base/BMKBaseComponent.h>
+
 
 @interface RCTBaiduMapManager : RCTViewManager
 

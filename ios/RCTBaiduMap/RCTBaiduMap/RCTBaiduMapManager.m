@@ -19,7 +19,7 @@
 #import "RCTBaiduMapAnnotation.h"
 #import "RCTBaiduMapOverlay.h"
 
-static NSString *const RCTBaiduMapViewKey = @"BaiduMapView";
+static NSString *const RCTBaiduMapViewKey = @"UZx4a639pyMTGbTvQSUnPSI2pW3GppQG";
 
 
 static NSString *const RCTBaiduMapPinRed = @"#ff3b30";
@@ -63,7 +63,7 @@ RCT_ENUM_CONVERTER(BMKPinAnnotationColor, (@{
 
 @end
 
-@interface RCTBaiduMapManager () <BMKMapViewDelegate>
+@interface RCTBaiduMapManager () <BMKMapViewDelegate, BMKGeneralDelegate>
 
 @end
 
@@ -73,10 +73,43 @@ RCT_EXPORT_MODULE()
 
 - (UIView *)view
 {
+    //add by keming start 2016-8-26 要使用百度地图，请先启动BaiduMapManager
+    BMKMapManager* mapManager = [[BMKMapManager alloc]init];
+    BOOL ret = [mapManager start:RCTBaiduMapViewKey generalDelegate:self];
+    if (!ret) {
+        NSLog(@"百度地图启动失败");
+    }
+    //add by keming end
+    
     RCTBaiduMap *map = [RCTBaiduMap new];
+    
     map.delegate = self;
     return map;
 }
+
+//add by keming start 2016-8-26 BMKMapManager start delegate
+#pragma mark - Baidu Map Delegate
+- (void)onGetNetworkState:(int)iError{
+    
+    if (0 == iError) {
+        NSLog(@"百度地图联网成功");
+    }
+    else{
+        NSLog(@"百度地图连接网络出错 %d",iError);
+    }
+}
+
+- (void)onGetPermissionState:(int)iError{
+    
+    if (0 == iError) {
+        NSLog(@"百度地图授权成功");
+    }
+    else {
+        NSLog(@"百度地图授权出错 %d",iError);
+    }
+}
+//add by keming end
+
 
 RCT_EXPORT_VIEW_PROPERTY(showsUserLocation, BOOL)
 RCT_EXPORT_VIEW_PROPERTY(showsPointsOfInterest, BOOL)
