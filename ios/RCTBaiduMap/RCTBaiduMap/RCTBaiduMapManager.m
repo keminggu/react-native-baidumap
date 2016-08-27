@@ -19,6 +19,7 @@
 #import "RCTBaiduMapAnnotation.h"
 #import "RCTBaiduMapOverlay.h"
 
+static BMKMapManager* mapManager = nil;
 static NSString *const RCTBaiduMapViewKey = @"UZx4a639pyMTGbTvQSUnPSI2pW3GppQG";
 
 
@@ -74,10 +75,12 @@ RCT_EXPORT_MODULE()
 - (UIView *)view
 {
     //add by keming start 2016-8-26 要使用百度地图，请先启动BaiduMapManager
-    BMKMapManager* mapManager = [[BMKMapManager alloc]init];
-    BOOL ret = [mapManager start:RCTBaiduMapViewKey generalDelegate:self];
-    if (!ret) {
-        NSLog(@"百度地图启动失败");
+    if(mapManager == nil) {
+        mapManager = [[BMKMapManager alloc]init];
+        BOOL ret = [mapManager start:RCTBaiduMapViewKey generalDelegate:self];
+        if (!ret) {
+            NSLog(@"百度地图启动失败");
+        }
     }
     //add by keming end
     
