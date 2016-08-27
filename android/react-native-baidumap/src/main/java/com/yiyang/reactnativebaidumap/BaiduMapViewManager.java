@@ -1,7 +1,9 @@
 package com.yiyang.reactnativebaidumap;
 
 import android.content.Context;
+import android.os.Bundle;
 import android.os.StrictMode;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -10,15 +12,20 @@ import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.MapStatus;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.model.LatLng;
 import com.baidu.mapapi.model.LatLngBounds;
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableType;
+import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
+import com.facebook.react.uimanager.UIManagerModule;
 import com.facebook.react.uimanager.annotations.ReactProp;
+import com.facebook.react.uimanager.events.EventDispatcher;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +44,8 @@ public class BaiduMapViewManager extends SimpleViewManager<MapView> {
     private Context mContext;
 
     private boolean isMapLoaded;
+
+    private EventDispatcher mEventDispatcher = null;
 
 
     @Override
@@ -57,6 +66,7 @@ public class BaiduMapViewManager extends SimpleViewManager<MapView> {
             }
         });
         this.mContext = themedReactContext;
+        this.mEventDispatcher = themedReactContext.getNativeModule(UIManagerModule.class).getEventDispatcher();
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
         return view;
@@ -107,7 +117,7 @@ public class BaiduMapViewManager extends SimpleViewManager<MapView> {
     }
 
     @ReactProp(name = "annotations")
-    public void setAnnotations(MapView mapView, @Nullable ReadableArray value) throws Exception{
+    public void setAnnotations(final MapView mapView, @Nullable ReadableArray value) throws Exception{
         if (value == null || value.size() == 0) {
             Log.e(RCT_CLASS, "Error: no annotation");
             return;
@@ -117,6 +127,7 @@ public class BaiduMapViewManager extends SimpleViewManager<MapView> {
         int size = value.size();
         for (int i = 0; i < size; i++) {
             ReadableMap annotation = value.getMap(i);
+            Log.i(RCT_CLASS, annotation.toString());
             ReactMapMarker marker = new ReactMapMarker(this.mContext);
             marker.buildMarker(annotation);
             markers.add(marker);
@@ -124,9 +135,39 @@ public class BaiduMapViewManager extends SimpleViewManager<MapView> {
 
         getMapView().setMarker(markers);
 
+
+
+
         if (this.isMapLoaded && this.mMapView.isAutoZoomToSpan()) {
             this.mMapView.zoomToSpan();
         }
+
+        this.mMapView.getMap().setOnMarkerClickListener(new BaiduMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+
+                Log.i(RCT_CLASS, "marker click");
+                Bundle data = marker.getExtraInfo();
+                String id = data.getString("id");
+                WritableMap event = Arguments.createMap();
+                event.putString("action","annotation-click");
+                //event.putString("annotationId", id);
+                WritableMap annotation = Arguments.createMap();
+                annotation.putString("id", id);
+                annotation.putString("title",data.getString("title"));
+                annotation.putString("subtitle",data.getString("subtitle"));
+                annotation.putDouble("latitude",data.getDouble("latitude"));
+                annotation.putDouble("longitude",data.getDouble("longitude"));
+                event.putMap("annotation", annotation);
+
+                Log.i(RCT_CLASS, "====id==="+id);
+
+                mEventDispatcher.dispatchEvent(new MapEvent(mapView.getId(), SystemClock.uptimeMillis(), MapEvent.ON_PRESS, event));
+
+               // mEventDispatcher.dispatchEvent();onAnnotationFocus
+                return true;
+            }
+        });
 
     }
 
@@ -189,6 +230,16 @@ public class BaiduMapViewManager extends SimpleViewManager<MapView> {
             default:
                 break;
         }
+    }
+
+    @Override
+    public @Nullable Map getExportedCustomDirectEventTypeConstants() {
+        return  MapBuilder.of(
+            MapEvent.eventNameForType(MapEvent.ON_CHANGE),
+            MapBuilder.of("registrationName", "onChange"),
+            MapEvent.eventNameForType(MapEvent.ON_PRESS),
+            MapBuilder.of("registrationName", "onPress")
+        );
     }
 
     @javax.annotation.Nullable

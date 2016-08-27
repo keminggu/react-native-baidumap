@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Animatable;
 import android.net.Uri;
+import android.os.Bundle;
 
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BitmapDescriptor;
@@ -36,6 +37,7 @@ public class ReactMapMarker {
     private Marker mMarker;
     private MarkerOptions mOptions;
 
+    private Bundle mBundle;
     private String id;
 
     private Context mContext;
@@ -85,7 +87,23 @@ public class ReactMapMarker {
         if (annotation == null) {
             throw new Exception("marker annotation must not be null");
         }
-        id = annotation.getString("id");
+        this.id = annotation.getString("id");
+
+        mBundle = new Bundle();
+        mBundle.putString("id", this.id);
+        if (annotation.hasKey("title")) {
+            mBundle.putString("title", annotation.getString("title"));
+        }
+        if (annotation.hasKey("subtitle")) {
+            mBundle.putString("subtitle", annotation.getString("subtitle"));
+        }
+        if (annotation.hasKey("latitude")) {
+            mBundle.putDouble("latitude", annotation.getDouble("latitude"));
+        }
+        if (annotation.hasKey("longitude")) {
+            mBundle.putDouble("longitude", annotation.getDouble("longitude"));
+        }
+
         MarkerOptions options = new MarkerOptions();
         double latitude = annotation.getDouble("latitude");
         double longitude = annotation.getDouble("longitude");
@@ -142,6 +160,7 @@ public class ReactMapMarker {
     public void addToMap(BaiduMap map) {
         if (this.mMarker == null) {
             this.mMarker = (Marker)map.addOverlay(this.getOptions());
+            this.mMarker.setExtraInfo(mBundle);
         }
     }
 
